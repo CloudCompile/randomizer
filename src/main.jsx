@@ -5,6 +5,9 @@ import './styles.css';
 import './liquid.css';
 
 const STORAGE_KEY = 'groupwise-state-v1';
+const SPLASH_KEY = 'groupwise-splash-seen-v1';
+const APP_VERSION = 'v1.0.0';
+const COMMIT = '7bdca56';
 const uid = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const initialState = () => ({ classes: [{ id: uid(), name: 'My Class', students: [], groupCount: 3 }], activeId: null, results: null });
 const parseNames = value => value.split('\n').map(name => name.trim()).filter(Boolean);
@@ -20,6 +23,7 @@ function loadState() {
 }
 function App() {
   const [state, setState] = useState(loadState);
+  const [showSplash, setShowSplash] = useState(() => { try { return localStorage.getItem(SPLASH_KEY) !== '1'; } catch { return true; } });
   const [resultAnimating, setResultAnimating] = useState(false);
   const [notice, setNotice] = useState('');
   const [dialog, setDialog] = useState(null);
@@ -34,6 +38,7 @@ function App() {
 
   useEffect(() => { if (!state.activeId && state.classes[0]) setState(prev => ({ ...prev, activeId: prev.classes[0].id })); }, [state.activeId, state.classes]);
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }, [state]);
+  useEffect(() => { if (!showSplash) { try { localStorage.setItem(SPLASH_KEY, '1'); } catch {} } }, [showSplash]);
   useEffect(() => { if (current && groupCount > Math.max(1, students.length)) updateGroupCount(Math.max(1, students.length)); }, [students.length, groupCount, current?.id]);
   useEffect(() => { setRosterText(students.join('\n')); }, [current?.id]);
 
@@ -67,6 +72,7 @@ function App() {
   const importBackup = async event => { const file = event.target.files?.[0]; if (!file) return; try { const data = JSON.parse(await file.text()); if (!Array.isArray(data.classes) || !data.classes.length || data.classes.some(item => typeof item.name !== 'string' || !Array.isArray(item.students))) throw Error(); const classes = data.classes.map(item => ({ id: item.id || uid(), name: item.name.trim() || 'Untitled class', students: item.students.map(String).map(name => name.trim()).filter(Boolean), groupCount: Number.isInteger(item.groupCount) && item.groupCount > 0 ? item.groupCount : 3 })); setState({ classes, activeId: classes[0].id, results: null }); setNotice('Backup imported successfully.'); } catch { setNotice('That backup could not be imported. Please choose a Groupwise JSON backup.'); } event.target.value = ''; };
   const result = state.results?.classId === current.id ? state.results.groups : null;
   return <>
+    {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
     <header className="topbar"><a className="brand" href="/"><span className="brand-mark"><Sparkles size={18} /></span>Groupwise</a><div className="top-actions"><button className="button button-ghost" onClick={() => importRef.current?.click()}><FileUp size={15} /> Import</button><button className="button button-ghost" onClick={exportBackup}><Download size={15} /> Export</button><input ref={importRef} onChange={importBackup} type="file" accept="application/json" hidden /></div></header>
     <main className="app-shell">
       <section className="hero"><div><p className="eyebrow">CLASSROOM TOOL <span className="eyebrow-dot" /></p><h1>Make groups,<br /><em>make learning happen.</em></h1><p className="hero-copy">A calmer way to create balanced groups in seconds. Your class lists stay private in this browser.</p></div><div className="hero-decoration" aria-hidden="true"><Sparkles /><span>✦</span></div></section>
@@ -81,6 +87,12 @@ function App() {
     {dialog && <ClassDialog dialog={dialog} onClose={() => setDialog(null)} onSave={name => { dialog.mode === 'add' ? addClass(name) : renameClass(name); setDialog(null); }} onDelete={() => { deleteClass(); setDialog(null); }} canDelete={state.classes.length > 1} />}
   </>;
 }
+function SplashScreen({ onFinish }) {
+  const [closing, setClosing] = useState(false);
+  useEffect(() => { const closeTimer = window.setTimeout(() => setClosing(true), 10500); const finishTimer = window.setTimeout(onFinish, 12500); return () => { window.clearTimeout(closeTimer); window.clearTimeout(finishTimer); }; }, []);
+  return <div className={`splash-screen ${closing ? 'splash-closing' : ''}`} role="dialog" aria-label="Welcome to Groupwise"><div className="splash-content"><p className="splash-line splash-brand"><SplashText text="Groupwise" /></p><p className="splash-line splash-meta"><SplashText text={`${APP_VERSION} - Commit ${COMMIT}`} /></p><p className="splash-line splash-credit"><SplashText text="Presented to you by Sneeze Hauser" /></p></div></div>;
+}
+function SplashText({ text }) { return [...text].map((character, index) => <span className="splash-letter" style={{ '--letter-index': index }} key={`${character}-${index}`}>{character === ' ' ? '\u00a0' : character}</span>); }
 function PanelHeading({ eyebrow, title, children }) { return <div className="panel-heading"><div><p className="section-kicker">{eyebrow}</p><h2>{title}</h2></div>{children}</div>; }
 function ClassDialog({ dialog, onClose, onSave, onDelete, canDelete }) { const [name, setName] = useState(dialog.name); return <div className="modal-backdrop" role="presentation" onMouseDown={event => event.target === event.currentTarget && onClose()}><form className="class-dialog" onSubmit={event => { event.preventDefault(); if (name.trim()) onSave(name.trim()); }}><button className="close-dialog" type="button" onClick={onClose} aria-label="Close"><X size={17} /></button><p className="section-kicker">CLASS SETUP</p><h2>{dialog.mode === 'add' ? 'Add a class' : 'Manage class'}</h2><label htmlFor="class-name">Class name</label><input id="class-name" autoFocus value={name} onChange={event => setName(event.target.value)} maxLength="50" placeholder="e.g. Science · Period 2" /><div className="dialog-actions">{dialog.mode === 'edit' && canDelete && <button className="button button-danger" type="button" onClick={onDelete}><Trash2 size={15} /> Delete</button>}<span /><button className="button button-soft" type="button" onClick={onClose}>Cancel</button><button className="button button-dark" type="submit">Save class</button></div></form></div>; }
 
