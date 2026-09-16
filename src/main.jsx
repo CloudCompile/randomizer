@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Archive, ChevronDown, Download, FileUp, Minus, MoreHorizontal, Plus, Shuffle, Sparkles, Trash2, Users, X } from 'lucide-react';
 import './styles.css';
+import './liquid.css';
 
 const STORAGE_KEY = 'groupwise-state-v1';
 const uid = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
