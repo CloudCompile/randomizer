@@ -30,9 +30,14 @@ body:before,body:after{filter:blur(14px);opacity:.5;animation-duration:28s}
 .group-card:hover,.button:hover{transform:translateY(-3px) scale(1.01)}
 .group-card ol{margin-top:14px;padding-left:25px}
 .group-card li{font-size:16px;font-weight:700;line-height:1.5;letter-spacing:-.01em}
-.groups-enter{animation:water-results-in .8s cubic-bezier(.2,.8,.2,1) both;transform-origin:50% 0}
-.groups-enter .group-card{animation:water-card-in .72s cubic-bezier(.2,.8,.2,1) both}
-.groups-enter .group-card:nth-child(2){animation-delay:70ms}.groups-enter .group-card:nth-child(3){animation-delay:140ms}.groups-enter .group-card:nth-child(4){animation-delay:210ms}.groups-enter .group-card:nth-child(5){animation-delay:280ms}.groups-enter .group-card:nth-child(6){animation-delay:350ms}
+.groups-enter{animation:water-results-in 3.8s cubic-bezier(.16,.8,.2,1) both;transform-origin:50% 0}
+.results-section{scroll-margin-top:92px}
+.results-section:has(.groups-enter){animation:results-focus 3.8s ease both}
+.groups-enter .group-card{animation:water-card-in 1.35s cubic-bezier(.16,.8,.2,1) both;animation-delay:var(--card-delay,0ms)}
+.groups-enter .group-card:after{content:"";position:absolute;inset:-40% -80%;pointer-events:none;background:linear-gradient(105deg,transparent 38%,#ffffff99 48%,#bffff055 52%,transparent 62%);transform:translateX(-70%) rotate(8deg);animation:water-shine 1.2s ease-out both;animation-delay:calc(var(--card-delay, 0ms) + 280ms)}
+.groups-enter .group-card:nth-child(2){--card-delay:520ms}.groups-enter .group-card:nth-child(3){--card-delay:1040ms}.groups-enter .group-card:nth-child(4){--card-delay:1560ms}.groups-enter .group-card:nth-child(5){--card-delay:2080ms}.groups-enter .group-card:nth-child(6){--card-delay:2600ms}
 @keyframes water-results-in{0%{opacity:0;filter:blur(9px);transform:translateY(28px) scaleY(.92)}55%{opacity:1;filter:blur(1px);transform:translateY(-5px) scaleY(1.02)}100%{filter:none;transform:translateY(0) scaleY(1)}}
-@keyframes water-card-in{0%{opacity:0;transform:translateY(24px) scale(.94) skewY(2deg)}65%{opacity:1;transform:translateY(-6px) scale(1.02) skewY(-.5deg)}100%{transform:translateY(0) scale(1) skewY(0)}}
+@keyframes water-card-in{0%{opacity:0;filter:blur(12px) saturate(160%);transform:translateY(44px) scale(.88,1.08) skewY(3deg);clip-path:inset(0 0 100% 0 round 29px)}35%{opacity:1;filter:blur(3px) saturate(190%);transform:translateY(-10px) scale(1.025,.98) skewY(-1deg);clip-path:inset(0 0 8% 0 round 29px)}65%{filter:blur(0) saturate(120%);transform:translateY(4px) scale(.995,1.01) skewY(.3deg);clip-path:inset(0 0 0 0 round 29px)}100%{filter:none;transform:translateY(0) scale(1) skewY(0)}}
+@keyframes results-focus{0%{filter:drop-shadow(0 -8px 28px #7de8d866)}100%{filter:drop-shadow(0 0 0 transparent)}}
+@keyframes water-shine{0%{opacity:0;transform:translateX(-70%) rotate(8deg)}35%{opacity:1}100%{opacity:0;transform:translateX(70%) rotate(8deg)}}
 @media(prefers-reduced-motion:reduce){.groups-enter,.groups-enter .group-card{animation:none!important}}

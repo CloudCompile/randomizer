@@ -25,6 +25,7 @@ function App() {
   const [dialog, setDialog] = useState(null);
   const [rosterText, setRosterText] = useState('');
   const importRef = useRef(null);
+  const resultsRef = useRef(null);
   const current = state.classes?.find(item => item.id === state.activeId) || state.classes?.[0];
   const students = current?.students || [];
   const groupCount = current?.groupCount || 3;
@@ -38,11 +39,26 @@ function App() {
 
   const updateCurrent = studentsNext => setState(prev => ({ ...prev, results: null, classes: prev.classes.map(item => item.id === current.id ? { ...item, students: studentsNext } : item) }));
   const updateGroupCount = nextCount => setState(prev => ({ ...prev, classes: prev.classes.map(item => item.id === current.id ? { ...item, groupCount: nextCount } : item) }));
+  const revealResults = () => {
+    const target = resultsRef.current;
+    if (!target) return;
+    const start = window.scrollY;
+    const destination = Math.max(0, target.getBoundingClientRect().top + start - 76);
+    const distance = destination - start;
+    const startedAt = performance.now();
+    const step = now => {
+      const progress = Math.min(1, (now - startedAt) / 1250);
+      const eased = 1 - ((1 - progress) ** 3);
+      window.scrollTo(0, start + distance * eased);
+      if (progress < 1) window.requestAnimationFrame(step);
+    };
+    window.requestAnimationFrame(step);
+  };
   const randomize = () => {
     if (!students.length) return setNotice('Add at least two students before randomizing.');
     if (!Number.isInteger(groupCount) || groupCount < 1 || groupCount > maxGroups) return setNotice(`Use between 1 and ${maxGroups} groups for ${students.length} students.`);
     const groups = Array.from({ length: groupCount }, () => []); shuffle(students).forEach((student, index) => groups[index % groupCount].push(student));
-    setNotice(''); setResultAnimating(true); setState(prev => ({ ...prev, results: { classId: current.id, groups } })); window.setTimeout(() => setResultAnimating(false), 850);
+    setNotice(''); setResultAnimating(true); setState(prev => ({ ...prev, results: { classId: current.id, groups } })); window.setTimeout(revealResults, 100); window.setTimeout(() => setResultAnimating(false), 4400);
   };
   const addClass = name => { const item = { id: uid(), name, students: [], groupCount: 3 }; setState(prev => ({ ...prev, classes: [...prev.classes, item], activeId: item.id, results: null })); };
   const renameClass = name => { setState(prev => ({ ...prev, classes: prev.classes.map(item => item.id === current.id ? { ...item, name } : item) })); };
@@ -59,7 +75,7 @@ function App() {
         <section className="panel students-panel"><PanelHeading eyebrow="CURRENT CLASS" title={current.name}><button className="icon-button" onClick={() => setDialog({ mode: 'edit', name: current.name })} aria-label="Manage current class"><MoreHorizontal size={18} /></button></PanelHeading><div className="student-summary"><strong><Users size={14} /> {students.length} student{students.length === 1 ? '' : 's'}</strong><span>·</span><span>{result ? 'Groups created' : 'Ready to randomize'}</span></div><div className="roster-input-wrap"><label htmlFor="roster-input">Student names</label><textarea id="roster-input" rows="9" value={rosterText} onChange={event => { setRosterText(event.target.value); updateCurrent(parseNames(event.target.value)); }} placeholder="Add one student per line…" spellCheck="false" autoCorrect="off" autoCapitalize="words" /><p className="field-hint">One name per line · changes save automatically</p></div><div className="student-actions"><button className="button button-soft" onClick={() => { if (!students.length || window.confirm('Clear the entire student list?')) { setRosterText(''); updateCurrent([]); } }}>Clear list</button><button className="button button-dark" onClick={() => { const present = window.prompt('Paste the names of students who are present, one per line.'); if (present !== null) { const keep = new Set(parseNames(present).map(name => name.toLowerCase())); const next = students.filter(name => keep.has(name.toLowerCase())); setRosterText(next.join('\n')); updateCurrent(next); setNotice('Absent students were removed.'); } }}>Remove absent</button></div></section>
         <section className="panel randomize-panel"><PanelHeading eyebrow="GROUP SETTINGS" title="Randomize"><span className="sparkle"><Sparkles size={21} /></span></PanelHeading><div className="setting"><label htmlFor="group-count">Number of groups</label><div className="number-control"><button onClick={() => updateGroupCount(Math.max(1, groupCount - 1))} aria-label="Decrease group count"><Minus size={17} /></button><input id="group-count" type="number" min="1" max={Math.max(1, maxGroups)} value={groupCount} onChange={event => updateGroupCount(Number(event.target.value) || 1)} /><button onClick={() => updateGroupCount(Math.min(Math.max(1, maxGroups), groupCount + 1))} aria-label="Increase group count"><Plus size={17} /></button></div></div><p className="setting-note">{groupHint}</p><button className="button button-primary randomize-button" onClick={randomize}><Shuffle size={16} /> Randomize groups</button><p className="privacy-note"><Archive size={13} /> Saved locally in your browser</p></section>
       </section>
-      <section className="results-section"><div className="results-heading"><div><p className="section-kicker">YOUR RESULTS</p><h2>{result ? `${result.length} balanced groups` : 'Groups are waiting'}</h2></div>{result && <button className="button button-soft" onClick={() => setState(prev => ({ ...prev, results: null }))}>Clear results</button>}</div><div className="message" role="status" aria-live="polite">{notice}</div>{result ? <div className={`groups-grid ${resultAnimating ? 'groups-enter' : ''}`}>{result.map((group, index) => <article className="group-card" key={index}><div className="group-card-top"><h3>Group {String(index + 1).padStart(2, '0')}</h3><span>{group.length}</span></div><ol>{group.map(name => <li key={name}>{name}</li>)}</ol></article>)}</div> : <div className="empty-results"><Sparkles size={24} /><p>Your randomized groups will appear here.</p><small>Add students above, choose a group count, and begin.</small></div>}</section>
+      <section className="results-section" ref={resultsRef}><div className="results-heading"><div><p className="section-kicker">YOUR RESULTS</p><h2>{result ? `${result.length} balanced groups` : 'Groups are waiting'}</h2></div>{result && <button className="button button-soft" onClick={() => setState(prev => ({ ...prev, results: null }))}>Clear results</button>}</div><div className="message" role="status" aria-live="polite">{notice}</div>{result ? <div className={`groups-grid ${resultAnimating ? 'groups-enter' : ''}`}>{result.map((group, index) => <article className="group-card" key={index}><div className="group-card-top"><h3>Group {String(index + 1).padStart(2, '0')}</h3><span>{group.length}</span></div><ol>{group.map(name => <li key={name}>{name}</li>)}</ol></article>)}</div> : <div className="empty-results"><Sparkles size={24} /><p>Your randomized groups will appear here.</p><small>Add students above, choose a group count, and begin.</small></div>}</section>
       <footer><span>Groupwise</span><span>Made for focused classrooms · Data stays on this device</span></footer>
     </main>
     {dialog && <ClassDialog dialog={dialog} onClose={() => setDialog(null)} onSave={name => { dialog.mode === 'add' ? addClass(name) : renameClass(name); setDialog(null); }} onDelete={() => { deleteClass(); setDialog(null); }} canDelete={state.classes.length > 1} />}
