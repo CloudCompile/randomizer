@@ -50,7 +50,9 @@ body:before,body:after{filter:blur(14px);opacity:.5;animation-duration:28s}
 
 /* Automatic first-visit intro: full-screen, quiet, and sequential. */
 .splash-screen{background:radial-gradient(circle at 50% 44%,#effff6 0,#bdeedc 28%,#8acfcf 61%,#80aee0 100%);cursor:default}
+.splash-closing{animation:splash-screen-fade 1.5s ease forwards}
 .splash-content{padding:0;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;display:flex;flex-direction:column;align-items:center;gap:22px;animation:none}
 .splash-line{margin:0;opacity:0;color:#12352f;text-align:center}.splash-brand{font:600 clamp(48px,10vw,118px)/.95 'Fraunces',serif;letter-spacing:-.06em;animation:splash-line-in 2.2s .4s ease-in-out forwards}.splash-meta{font-size:clamp(12px,1.7vw,18px);letter-spacing:.1em;animation:splash-line-in 2.2s 3s ease-in-out forwards}.splash-credit{font-size:clamp(14px,2vw,22px);letter-spacing:.02em;animation:splash-line-in 2.2s 5.8s ease-in-out forwards}.splash-line .splash-letter{animation:splash-letter-in 1.25s both;animation-delay:calc(var(--line-delay, 0ms) + var(--letter-index) * 38ms)}.splash-brand{--line-delay:400ms}.splash-meta{--line-delay:3000ms}.splash-credit{--line-delay:5800ms}.splash-line .splash-letter{opacity:0}
 .splash-closing .splash-line{animation:none}.splash-closing .splash-line .splash-letter{animation:splash-letter-out .8s cubic-bezier(.6,0,.8,.2) both;animation-delay:calc(var(--letter-index) * 20ms)}
 @keyframes splash-line-in{0%,100%{opacity:1}10%{opacity:1}90%{opacity:1}}@keyframes splash-letter-in{0%{opacity:0;filter:blur(8px);transform:translateY(12px)}45%,100%{opacity:1;filter:none;transform:none}}@keyframes splash-letter-out{to{opacity:0;filter:blur(7px);transform:translateY(-12px) scale(.85)}}
+@keyframes splash-screen-fade{from{opacity:1}to{opacity:0}}
