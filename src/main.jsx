@@ -1,22 +1,29 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Archive, ChevronDown, Download, FileUp, Minus, MoreHorizontal, Plus, Shuffle, Sparkles, Trash2, Users, X } from 'lucide-react';
 import './styles.css';
 
 const STORAGE_KEY = 'groupwise-state-v1';
-const uid = () => crypto.randomUUID();
+const uid = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const initialState = () => ({ classes: [{ id: uid(), name: 'My Class', students: [] }], activeId: null, results: null });
 const parseNames = value => value.split('\n').map(name => name.trim()).filter(Boolean);
 const shuffle = values => { const items = [...values]; for (let i = items.length - 1; i > 0; i -= 1) { const j = Math.floor(Math.random() * (i + 1)); [items[i], items[j]] = [items[j], items[i]]; } return items; };
 
-function loadState() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || initialState(); } catch { return initialState(); } }
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (!Array.isArray(saved?.classes) || !saved.classes.length) return initialState();
+    const classes = saved.classes.map(item => ({ id: item.id || uid(), name: String(item.name || 'Untitled class'), students: Array.isArray(item.students) ? item.students.map(String).map(name => name.trim()).filter(Boolean) : [] }));
+    return { classes, activeId: classes.some(item => item.id === saved.activeId) ? saved.activeId : classes[0].id, results: saved.results || null };
+  } catch { return initialState(); }
+}
 function App() {
   const [state, setState] = useState(loadState);
   const [groupCount, setGroupCount] = useState(3);
   const [notice, setNotice] = useState('');
   const [dialog, setDialog] = useState(null);
   const importRef = useRef(null);
-  const current = state.classes.find(item => item.id === state.activeId) || state.classes[0];
+  const current = state.classes?.find(item => item.id === state.activeId) || state.classes?.[0];
   const students = current?.students || [];
   const maxGroups = Math.floor(students.length / 2);
   const groupHint = !students.length ? 'Add students to get started.' : groupCount > maxGroups ? 'Choose fewer groups to avoid a group of one.' : `Each group will have ${Math.floor(students.length / groupCount)}–${Math.ceil(students.length / groupCount)} students.`;
